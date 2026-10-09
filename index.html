@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rooster Handsome — A Story</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0b1020;
+    font-family:"Trebuchet MS",system-ui,-apple-system,sans-serif;color:#fff;
+    user-select:none;-webkit-user-select:none;touch-action:none}
+  canvas{display:block}
+
+  /* ---------- atmospheric grade ---------- */
+  #grade{position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:
+      radial-gradient(ellipse at 50% 45%, rgba(255,214,150,.06) 0%, rgba(0,0,0,0) 55%),
+      radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 42%, rgba(26,12,2,.5) 100%);
+    mix-blend-mode:multiply}
+  #grain{position:fixed;inset:-50%;pointer-events:none;z-index:4;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain .7s steps(4) infinite}
+  @keyframes grain{
+    0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}
+    50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-2%)}
+    100%{transform:translate(3%,1%)}}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;padding:22px;z-index:6;
+       display:flex;flex-direction:column;justify-content:space-between;
+       opacity:0;transition:opacity .6s ease}
+  #hud.show{opacity:1}
+
+  .panel{background:linear-gradient(150deg,rgba(12,18,28,.74),rgba(12,18,28,.44));
+    border:1px solid rgba(255,214,140,.28);border-radius:14px;padding:14px 20px 16px;
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+    box-shadow:0 12px 34px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+    width:272px}
+
+  .chapter-label{font-size:10px;letter-spacing:.34em;color:#ffbe5c;font-weight:700;
+    margin-bottom:4px;text-shadow:0 0 14px rgba(255,180,60,.55);opacity:.9}
+  .title{font-size:13px;letter-spacing:.32em;color:#ffd68c;font-weight:700;margin-bottom:12px;
+    text-shadow:0 0 14px rgba(255,180,60,.5)}
+  .title span{color:#fff}
+
+  .row{display:flex;justify-content:space-between;align-items:baseline;
+    font-size:12px;letter-spacing:.16em;color:#c8d4e2;margin-top:9px}
+  .row b{font-size:17px;letter-spacing:.05em;color:#fff;font-weight:700}
+
+  .bar{height:9px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;
+    margin-top:8px;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+  .bar i{display:block;height:100%;width:0%;border-radius:6px;
+    background:linear-gradient(90deg,#ffb340,#ff7a2f,#ffe08a);
+    box-shadow:0 0 16px rgba(255,170,60,.85);transition:width .35s cubic-bezier(.2,.9,.3,1)}
+
+  .stamina{margin-top:12px}
+  .stamina .bar i{background:linear-gradient(90deg,#3fd7a0,#8ef7c8);box-shadow:0 0 14px rgba(80,240,190,.7)}
+
+  .bottom{display:flex;justify-content:center}
+  .hint{font-size:11.5px;letter-spacing:.18em;color:rgba(225,236,248,.72);
+    background:rgba(10,16,26,.5);border:1px solid rgba(255,255,255,.1);
+    padding:9px 20px;border-radius:30px;backdrop-filter:blur(8px)}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;top:34%;left:50%;transform:translate(-50%,-50%) scale(.9);
+    font-size:36px;letter-spacing:.22em;font-weight:700;color:#ffdc9a;opacity:0;
+    text-shadow:0 0 34px rgba(255,170,60,.85);pointer-events:none;transition:all .45s ease;z-index:9;
+    font-family:Georgia,"Times New Roman",serif}
+  .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+  /* ---------- chapter card ---------- */
+  #chapterCard{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:15;opacity:0;transition:opacity 1.1s ease}
+  #chapterCard.show{opacity:1}
+  .cc-inner{text-align:center;transform:translateY(10px);transition:transform 1.4s ease}
+  #chapterCard.show .cc-inner{transform:translateY(0)}
+  .cc-title{font-family:Georgia,"Times New Roman",serif;font-size:34px;letter-spacing:.42em;
+    color:#ffd98a;text-shadow:0 0 40px rgba(255,170,60,.7), 0 3px 20px rgba(0,0,0,.8)}
+  .cc-sub{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:21px;
+    letter-spacing:.14em;color:#f0e2c8;margin-top:12px;text-shadow:0 2px 16px rgba(0,0,0,.9);opacity:.9}
+  .cc-rule{width:0;height:1px;margin:22px auto 0;
+    background:linear-gradient(90deg,transparent,#ffd98a,transparent);transition:width 1.6s ease}
+  #chapterCard.show .cc-rule{width:280px}
+
+  /* ---------- story overlay ---------- */
+  #storyOverlay{position:fixed;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 45%, rgba(24,18,10,.55), rgba(3,3,6,.93));
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+    opacity:0;pointer-events:none;transition:opacity .8s ease;padding:26px}
+  #storyOverlay.show{opacity:1;pointer-events:auto}
+
+  .story-box{max-width:760px;width:100%;padding:44px 54px 38px;border-radius:8px;
+    background:linear-gradient(160deg,rgba(26,21,14,.86),rgba(14,11,8,.8));
+    border:1px solid rgba(255,206,120,.22);
+    box-shadow:0 30px 90px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.06);
+    position:relative}
+  .story-box::before{content:"";position:absolute;inset:9px;border:1px solid rgba(255,206,120,.1);
+    border-radius:5px;pointer-events:none}
+
+  .story-chapter{font-family:Georgia,"Times New Roman",serif;font-size:12px;letter-spacing:.46em;
+    color:#ffbe5c;text-shadow:0 0 18px rgba(255,170,60,.5)}
+  .story-rule{height:1px;margin:14px 0 24px;
+    background:linear-gradient(90deg,rgba(255,206,120,.55),transparent)}
+
+  .story-text{font-family:Georgia,"Times New Roman",serif;font-size:20.5px;line-height:1.85;
+    color:#f3e8d4;letter-spacing:.012em;min-height:150px;white-space:pre-wrap;
+    text-shadow:0 2px 14px rgba(0,0,0,.7)}
+
+  .story-prompt{margin-top:26px;text-align:right;font-size:10.5px;letter-spacing:.32em;
+    color:#ffd68c;opacity:0;transition:opacity .5s ease;animation:pulseP 2s ease-in-out infinite}
+  .story-box.ready .story-prompt{opacity:.85}
+  @keyframes pulseP{0%,100%{opacity:.45}50%{opacity:1}}
+
+  /* ---------- main overlay / menus ---------- */
+  #overlay{position:fixed;inset:0;z-index:30;
+    background:radial-gradient(ellipse at 50% 40%,rgba(30,50,80,.5),rgba(3,5,10,.95));
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    opacity:0;pointer-events:none;transition:opacity .55s ease}
+  #overlay.show{opacity:1;pointer-events:auto}
+
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:30px;overflow-y:auto;
+    opacity:0;pointer-events:none;transform:translateY(14px);
+    transition:opacity .4s ease, transform .4s ease}
+  .screen.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+
+  .logo{text-align:center;margin-bottom:44px}
+  .logo h1{font-size:56px;letter-spacing:.05em;line-height:1;
+    background:linear-gradient(180deg,#fff6d8,#ffc247 55%,#e8791d);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 4px 30px rgba(255,150,40,.5))}
+  .logo h1 em{font-style:normal;display:block;font-size:42px;letter-spacing:.26em;margin-top:8px;
+    background:linear-gradient(180deg,#ffffff,#ffd88a);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .tagline{margin-top:20px;font-family:Georgia,"Times New Roman",serif;font-style:italic;
+    font-size:16px;letter-spacing:.1em;color:#c9b899;opacity:.9}
+
+  .menu-buttons{display:flex;flex-direction:column;align-items:center;gap:13px}
+  .menu-buttons button{width:300px;margin-top:0}
+
+  button{padding:15px 40px;border:none;border-radius:40px;cursor:pointer;
+    font-family:inherit;font-size:13.5px;font-weight:700;letter-spacing:.24em;color:#2a1400;
+    background:linear-gradient(180deg,#ffe08a,#ffab33);
+    box-shadow:0 12px 34px rgba(255,150,40,.4), inset 0 1px 0 rgba(255,255,255,.7);
+    transition:transform .16s ease, box-shadow .16s ease, background .2s ease}
+  button:hover{transform:translateY(-2px) scale(1.03);
+    box-shadow:0 18px 42px rgba(255,150,40,.58), inset 0 1px 0 rgba(255,255,255,.8)}
+  button:active{transform:translateY(0) scale(.99)}
+
+  button.ghost{background:transparent;color:#e6d6b4;
+    border:1px solid rgba(255,206,120,.35);box-shadow:none}
+  button.ghost:hover{background:rgba(255,206,120,.1);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+
+  .byline{margin-top:34px;font-size:10.5px;letter-spacing:.36em;color:rgba(200,210,225,.5)}
+
+  /* ---------- panel cards (options / credits) ---------- */
+  .card{width:min(560px,92vw);padding:40px 46px 36px;border-radius:20px;
+    background:linear-gradient(155deg,rgba(20,28,44,.93),rgba(10,14,24,.86));
+    border:1px solid rgba(255,206,120,.28);
+    box-shadow:0 30px 90px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.09);
+    text-align:center}
+  .card h2{font-family:Georgia,"Times New Roman",serif;font-size:26px;letter-spacing:.34em;
+    color:#ffd98a;margin-bottom:8px;text-shadow:0 0 26px rgba(255,170,60,.45)}
+  .card .rule{height:1px;margin:0 auto 26px;width:190px;
+    background:linear-gradient(90deg,transparent,rgba(255,206,120,.6),transparent)}
+
+  .opt-row{display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:14px 2px;border-bottom:1px solid rgba(255,255,255,.07)}
+  .opt-row:last-of-type{border-bottom:none}
+  .opt-label{font-size:11.5px;letter-spacing:.2em;color:#cbd8e7;text-align:left}
+  .opt-label small{display:block;font-size:9.5px;letter-spacing:.12em;color:#7f90a6;margin-top:3px}
+
+  .seg{display:flex;gap:5px;background:rgba(255,255,255,.07);padding:4px;
+    border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+  .seg button{margin:0;padding:6px 14px;font-size:10px;letter-spacing:.18em;border-radius:7px;
+    background:transparent;color:#9fb2c8;box-shadow:none;font-weight:700}
+  .seg button:hover{color:#fff;transform:none;box-shadow:none;background:rgba(255,255,255,.07)}
+  .seg button.active{background:linear-gradient(180deg,#ffe08a,#ffab33);color:#2a1400;
+    box-shadow:0 4px 14px rgba(255,150,40,.45)}
+  .seg button.active:hover{background:linear-gradient(180deg,#ffe08a,#ffab33)}
+
+  .range-wrap{display:flex;align-items:center;gap:12px}
+  .range-val{font-size:10.5px;letter-spacing:.1em;color:#ffd68c;width:38px;text-align:right}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:158px;height:5px;border-radius:4px;
+    background:rgba(255,255,255,.16);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:linear-gradient(180deg,#ffe08a,#ffab33);box-shadow:0 2px 10px rgba(255,150,40,.7);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+    background:linear-gradient(180deg,#ffe08a,#ffab33);box-shadow:0 2px 10px rgba(255,150,40,.7);cursor:pointer}
+
+  .card button.back{margin-top:30px}
+
+  /* ---------- credits ---------- */
+  .credits-body{font-family:Georgia,"Times New Roman",serif;color:#e8ddc8;line-height:2.05;
+    font-size:15px;letter-spacing:.05em}
+  .credits-body .role{font-size:10px;letter-spacing:.34em;color:#8fa2ba;
+    font-family:"Trebuchet MS",sans-serif;display:block;margin-top:20px}
+  .credits-body .name{font-size:22px;letter-spacing:.16em;color:#ffd98a;
+    text-shadow:0 0 24px rgba(255,170,60,.45)}
+  .credits-body .small{font-size:12.5px;color:#a9b8cc;font-family:"Trebuchet MS",sans-serif;
+    letter-spacing:.1em;line-height:1.9}
+  .credits-divider{height:1px;width:120px;margin:26px auto;
+    background:linear-gradient(90deg,transparent,rgba(255,206,120,.5),transparent)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="grade"></div>
+<div id="grain"></div>
+
+<!-- ============ HUD ============ -->
+<div id="hud">
+  <div>
+    <div class="panel">
+      <div class="chapter-label" id="uiChapter">CHAPTER ONE</div>
+      <div class="title">ROOSTER <span>HANDSOME</span></div>
+      <div class="row"><span>LEVEL</span><b id="uiLevel">1</b></div>
+      <div class="bar"><i id="uiBar"></i></div>
+      <div class="row"><span>HENS</span><b id="uiHens">0 / 3</b></div>
+      <div class="stamina">
+        <div class="row" style="margin-top:2px"><span>STAMINA</span></div>
+        <div class="bar"><i id="uiStam" style="width:100%"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="hint">WASD · MOVE &nbsp;|&nbsp; SHIFT · SPRINT &nbsp;|&nbsp; SPACE · FLAP &nbsp;|&nbsp; DRAG · CAMERA &nbsp;|&nbsp; WHEEL · ZOOM</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ============ CHAPTER CARD ============ -->
+<div id="chapterCard">
+  <div class="cc-inner">
+    <div class="cc-title" id="ccTitle"></div>
+    <div class="cc-sub" id="ccSub"></div>
+    <div class="cc-rule"></div>
+  </div>
+</div>
+
+<!-- ============ STORY ============ -->
+<div id="storyOverlay">
+  <div class="story-box" id="storyBox">
+    <div class="story-chapter" id="storyChapter">PROLOGUE</div>
+    <div class="story-rule"></div>
+    <p class="story-text" id="storyText"></p>
+    <div class="story-prompt">SPACE / CLICK TO CONTINUE ▸</div>
+  </div>
+</div>
+
+<!-- ============ MENUS ============ -->
+<div id="overlay" class="show">
+
+  <!-- MAIN MENU -->
+  <div class="screen active" id="screen-menu">
+    <div class="logo">
+      <h1>ROOSTER<em>HANDSOME</em></h1>
+      <p class="tagline">A small story about being remarkable.</p>
+    </div>
+    <div class="menu-buttons">
+      <button data-action="story">BEGIN THE STORY</button>
+      <button class="ghost" data-action="options">OPTIONS</button>
+      <button class="ghost" data-action="credits">CREDITS</button>
+    </div>
+    <p class="byline">A GAME BY MAXNETSTUDIO</p>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="screen" id="screen-options">
+    <div class="card">
+      <h2>OPTIONS</h2>
+      <div class="rule"></div>
+
+      <div class="opt-row">
+        <div class="opt-label">BLOOM &amp; GLOW<small>Soft light bleeding</small></div>
+        <div class="seg" data-opt="bloom">
+          <button data-val="on">ON</button>
+          <button data-val="off">OFF</button>
+        </div>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">SHADOWS<small>Forest depth &amp; detail</small></div>
+        <div class="seg" data-opt="shadows">
+          <button data-val="high">HIGH</button>
+          <button data-val="low">LOW</button>
+          <button data-val="off">OFF</button>
+        </div>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">VOLUME<small>Ambience, chirps &amp; crows</small></div>
+        <div class="range-wrap">
+          <input type="range" min="0" max="1" step="0.05" data-opt="volume" />
+          <span class="range-val" id="valVolume">60</span>
+        </div>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">CAMERA SPEED<small>Drag &amp; zoom sensitivity</small></div>
+        <div class="range-wrap">
+          <input type="range" min="0.3" max="2.2" step="0.1" data-opt="sensitivity" />
+          <span class="range-val" id="valSens">1.0</span>
+        </div>
+      </div>
+
+      <div class="opt-row">
+        <div class="opt-label">INVERT LOOK<small>Flip vertical camera</small></div>
+        <div class="seg" data-opt="invertY">
+          <button data-val="off">OFF</button>
+          <button data-val="on">ON</button>
+        </div>
+      </div>
+
+      <button class="back ghost" data-back>BACK</button>
+    </div>
+  </div>
+
+  <!-- CREDITS -->
+  <div class="screen" id="screen-credits">
+    <div class="card">
+      <h2>CREDITS</h2>
+      <div class="rule"></div>
+
+      <div class="credits-body">
+        <span class="role">CREATED &amp; DESIGNED BY</span>
+        <div class="name">MAXNETSTUDIO</div>
+
+        <div class="credits-divider"></div>
+
+        <span class="role">ENGINE</span>
+        <div class="small">Three.js — WebGL Renderer</div>
+
+        <span class="role">WORLD, CHARACTERS &amp; ANIMATION</span>
+        <div class="small">Procedural geometry, instanced forest,<br>hand-tuned chicken rig</div>
+
+        <span class="role">STORY &amp; WORDS</span>
+        <div class="small">Written for everyone who was<br>ever the smallest chick in the coop.</div>
+
+        <div class="credits-divider"></div>
+
+        <div class="small" style="color:#8fa2ba;letter-spacing:.22em;font-size:10.5px">
+          THANK YOU FOR PLAYING
+        </div>
+      </div>
+
+      <button class="back ghost" data-back>BACK</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer }   from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }       from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass }  from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass }       from 'three/addons/postprocessing/OutputPass.js';
+
+/* =============================================================
+   1. OPTIONS
+   ============================================================= */
+const OPT_DEFAULTS = { bloom: 'on', shadows: 'high', volume: 0.6, sensitivity: 1.0, invertY: 'off' };
+let options = { ...OPT_DEFAULTS };
+try {
+  const saved = localStorage.getItem('rh_options');
+  if (saved) options = { ...options, ...JSON.parse(saved) };
+} catch (e) { /* ignore */ }
+
+function saveOptions() {
+  try { localStorage.setItem('rh_options', JSON.stringify(options)); } catch (e) {}
+}
+
+/* =============================================================
+   2. AUDIO  (tiny WebAudio synth — warm, nostalgic)
+   ============================================================= */
+const Audio = {
+  ctx: null, master: null, padGain: null, chirpTimer: null, ambienceOn: false,
+
+  init() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = options.volume;
+    this.master.connect(this.ctx.destination);
+  },
+
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+
+  setVolume(v) {
+    if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+  },
+
+  blip(freq, dur, type = 'sine', vol = 0.12, glideTo = null) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20, glideTo), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.06);
+  },
+
+  click()    { this.blip(560, 0.07, 'triangle', 0.09, 720); },
+  flap()     { this.blip(190, 0.13, 'sawtooth', 0.045, 95); },
+  storyTick(){ this.blip(1150 + Math.random() * 320, 0.022, 'sine', 0.012); },
+
+  collect() {
+    [660, 880, 1180].forEach((f, i) =>
+      setTimeout(() => this.blip(f, 0.2, 'sine', 0.14, f * 1.02), i * 72));
+  },
+
+  fanfare() {
+    [523, 659, 784, 1047].forEach((f, i) =>
+      setTimeout(() => this.blip(f, 0.42, 'triangle', 0.13), i * 130));
+  },
+
+  crow() {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 2.2;
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(500, t0);
+    o.frequency.exponentialRampToValueAtTime(880, t0 + 0.09);
+    o.frequency.exponentialRampToValueAtTime(430, t0 + 0.40);
+    o.frequency.exponentialRampToValueAtTime(295, t0 + 0.64);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.20, t0 + 0.045);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.72);
+    o.connect(f); f.connect(g); g.connect(this.master);
+    o.start(t0); o.stop(t0 + 0.78);
+  },
+
+  startAmbient() {
+    if (!this.ctx || this.padGain) return;
+    const g = this.ctx.createGain();
+    g.gain.value = 0.0001;
+    g.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 4);
+
+    const filt = this.ctx.createBiquadFilter();
+    filt.type = 'lowpass'; filt.frequency.value = 400; filt.Q.value = 0.8;
+
+    [110, 164.81, 220.5].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      o.type = i === 2 ? 'triangle' : 'sine';
+      o.frequency.value = f;
+      o.detune.value = (i - 1) * 8;
+      const og = this.ctx.createGain();
+      og.gain.value = i === 2 ? 0.22 : 0.5;
+      o.connect(og); og.connect(filt); o.start();
+    });
+
+    const lfo = this.ctx.createOscillator();
+    lfo.frequency.value = 0.045;
+    const lg = this.ctx.createGain();
+    lg.gain.value = 150;
+    lfo.connect(lg); lg.connect(filt.frequency); lfo.start();
+
+    filt.connect(g); g.connect(this.master);
+    this.padGain = g;
+  },
+
+  scheduleChirp() {
+    if (!this.ctx) return;
+    clearTimeout(this.chirpTimer);
+    const delay = 2600 + Math.random() * 6500;
+    this.chirpTimer = setTimeout(() => {
+      if (game.state === 'playing' || game.state === 'story' || game.state === 'transition') {
+        const base = 1450 + Math.random() * 1300;
+        this.blip(base, 0.06, 'sine', 0.03, base * 1.4);
+        setTimeout(() => this.blip(base * 1.18, 0.05, 'sine', 0.022, base * 1.55), 100);
+      }
+      this.scheduleChirp();
+    }, delay);
+  }
+};
+
+/* =============================================================
+   3. RENDERER / SCENE / CAMERA
+   ============================================================= */
+const app = document.getElementById('app');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0xc8e2f2, 0.0058);
+
+const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 1400);
+camera.position.set(0, 6, 13);
+
+/* =============================================================
+   4. SKY DOME
+   ============================================================= */
+const skyUniforms = {
+  topColor:    { value: new THREE.Color(0x1f6fd0) },
+  bottomColor: { value: new THREE.Color(0xc8e2f2) },
+  sunColor:    { value: new THREE.Color(0xfff6dd) },
+  sunDir:      { value: new THREE.Vector3(0.5, 0.6, 0.35).normalize() }
+};
+
+const skyMat = new THREE.ShaderMaterial({
+  uniforms: skyUniforms,
+  side: THREE.BackSide,
+  depthWrite: false,
+  vertexShader: /* glsl */`
+    varying vec3 vWorldPos;
+    void main() {
+      vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */`
+    uniform vec3 topColor;
+    uniform vec3 bottomColor;
+    uniform vec3 sunColor;
+    uniform vec3 sunDir;
+    varying vec3 vWorldPos;
+    void main() {
+      vec3 dir = normalize(vWorldPos);
+      float h = pow(clamp(dir.y, 0.0, 1.0), 0.55);
+      vec3 col = mix(bottomColor, topColor, h);
+
+      float sd = max(dot(dir, normalize(sunDir)), 0.0);
+      col += sunColor * pow(sd, 220.0) * 6.0;
+      col += sunColor * pow(sd, 9.0)   * 0.42;
+      col += sunColor * pow(sd, 2.0)   * 0.10;
+      col += vec3(0.95, 0.88, 0.72) * pow(1.0 - abs(dir.y), 9.0) * 0.22;
+
+      gl_FragColor = vec4(col, 1.0);
+    }`
+});
+
+const skyDome = new THREE.Mesh(new THREE.SphereGeometry(760, 40, 20), skyMat);
+skyDome.frustumCulled = false;
+scene.add(skyDome);
+
+/* =============================================================
+   5. LIGHTING
+   ============================================================= */
+const hemi = new THREE.HemisphereLight(0xa8d4ff, 0x3f6b28, 0.9);
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(0xfff6dd, 3.0);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 260;
+sun.shadow.camera.left = -52;
+sun.shadow.camera.right = 52;
+sun.shadow.camera.top = 52;
+sun.shadow.camera.bottom = -52;
+sun.shadow.bias = -0.0006;
+sun.shadow.normalBias = 0.035;
+scene.add(sun);
+scene.add(sun.target);
+
+const fillLight = new THREE.DirectionalLight(0x88aaff, 0.35);
+fillLight.position.set(-40, 30, -40);
+scene.add(fillLight);
+
+/* =============================================================
+   6. PALETTES
+   ============================================================= */
+const PALETTES = [
+  { top: 0x2c62a8, bottom: 0xf3d6a8, fog: 0xd9c9ad, sun: 0xffd9a0,
+    sunI: 2.6, hemiSky: 0x9dc4ff, hemiGround: 0x53602c, hemiI: 0.75, exposure: 1.02 },
+  { top: 0x1f6fd0, bottom: 0xc8e2f2, fog: 0xc8e2f2, sun: 0xfff6dd,
+    sunI: 3.1, hemiSky: 0xa8d4ff, hemiGround: 0x3f6b28, hemiI: 0.95, exposure: 1.0 },
+  { top: 0x2b3a7a, bottom: 0xff9d5c, fog: 0xd39a72, sun: 0xff9b4d,
+    sunI: 2.3, hemiSky: 0xffb27a, hemiGround: 0x4a3520, hemiI: 0.62, exposure: 1.06 },
+  { top: 0x040a1e, bottom: 0x1b3560, fog: 0x0e1c36, sun: 0xa8c8ff,
+    sunI: 0.95, hemiSky: 0x33507f, hemiGround: 0x101c12, hemiI: 0.38, exposure: 1.35 }
+];
+
+function applyPalette(index) {
+  const p = PALETTES[index % PALETTES.length];
+  skyUniforms.topColor.value.setHex(p.top);
+  skyUniforms.bottomColor.value.setHex(p.bottom);
+  skyUniforms.sunColor.value.setHex(p.sun);
+  scene.fog.color.setHex(p.fog);
+  sun.color.setHex(p.sun);
+  sun.intensity = p.sunI;
+  hemi.color.setHex(p.hemiSky);
+  hemi.groundColor.setHex(p.hemiGround);
+  hemi.intensity = p.hemiI;
+  renderer.toneMappingExposure = p.exposure;
+  fillLight.intensity = (index % PALETTES.length === 3) ? 0.55 : 0.3;
+}
+
+/* =============================================================
+   7. TERRAIN + WORLD
+   ============================================================= */
+function terrainHeight(x, z) {
+  return (
+    Math.sin(x * 0.045) * 1.15 +
+    Math.cos(z * 0.038) * 1.05 +
+    Math.sin((x + z) * 0.021) * 1.55 +
+    Math.cos((x - z) * 0.062) * 0.5
+  );
+}
+
+const WORLD_RADIUS = 178;
+const obstacles = [];
+
+function makeGrassTexture() {
+  const S = 256;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d');
+
+  ctx.fillStyle = '#cfe0b8';
+  ctx.fillRect(0, 0, S, S);
+
+  for (let i = 0; i < 11000; i++) {
+    const x = Math.random() * S, y = Math.random() * S;
+    const v = 0.72 + Math.random() * 0.5;
+    ctx.fillStyle = `rgba(${Math.floor(178 * v)},${Math.floor(214 * v)},${Math.floor(146 * v)},0.85)`;
+    ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 3);
+  }
+  for (let i = 0; i < 900; i++) {
+    ctx.fillStyle = `rgba(70,95,50,${0.15 + Math.random() * 0.2})`;
+    ctx.fillRect(Math.random() * S, Math.random() * S, 2, 2);
+  }
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(58, 58);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function buildTerrain() {
+  const SIZE = 460, SEG = 170;
+  const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
+  geo.rotateX(-Math.PI / 2);
+
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const c = new THREE.Color();
+
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    const y = terrainHeight(x, z);
+    pos.setY(i, y);
+
+    const t = THREE.MathUtils.clamp((y + 4.5) / 10, 0, 1);
+    const hue = 0.245 + t * 0.02 + (Math.random() - 0.5) * 0.012;
+    const light = 0.30 + t * 0.13 + (Math.random() - 0.5) * 0.045;
+    c.setHSL(hue, 0.42, light);
+
+    colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+  }
+
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: makeGrassTexture(), vertexColors: true, roughness: 0.98, metalness: 0.0
+  });
+
+  const ground = new THREE.Mesh(geo, mat);
+  ground.receiveShadow = true;
+  scene.add(ground);
+}
+
+function buildForest() {
+  const COUNT = 300;
+
+  const trunkGeo = new THREE.CylinderGeometry(0.24, 0.46, 1, 7, 1);
+  trunkGeo.translate(0, 0.5, 0);
+
+  const coneGeo = new THREE.ConeGeometry(1, 1, 9);
+  coneGeo.translate(0, 0.5, 0);
+
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96, metalness: 0 });
+  const leafMat  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0, flatShading: true });
+
+  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, COUNT);
+  const leaves = new THREE.InstancedMesh(coneGeo, leafMat, COUNT * 3);
+  trunks.castShadow = trunks.receiveShadow = true;
+  leaves.castShadow = leaves.receiveShadow = true;
+
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  const v = new THREE.Vector3(), s = new THREE.Vector3(), col = new THREE.Color();
+
+  let leafIndex = 0;
+
+  for (let i = 0; i < COUNT; i++) {
+    let x = 0, z = 0, ok = false, tries = 0;
+    while (!ok && tries++ < 50) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * WORLD_RADIUS;
+      x = Math.cos(a) * r; z = Math.sin(a) * r;
+      if (Math.hypot(x, z) < 15) continue;
+      ok = true;
+      for (const o of obstacles) {
+        if (Math.hypot(o.x - x, o.z - z) < o.r + 6.5) { ok = false; break; }
+      }
+    }
+
+    const y = terrainHeight(x, z);
+    const scale = 0.78 + Math.random() * 0.62;
+    const trunkH = (3.4 + Math.random() * 2.6) * scale;
+
+    e.set(0, Math.random() * Math.PI, 0);
+    q.setFromEuler(e);
+    v.set(x, y - 0.25, z);
+    s.set(scale, trunkH, scale);
+    m.compose(v, q, s);
+    trunks.setMatrixAt(i, m);
+    col.setHSL(0.075, 0.28 + Math.random() * 0.12, 0.20 + Math.random() * 0.09);
+    trunks.setColorAt(i, col);
+
+    obstacles.push({ x, z, r: 0.55 * scale });
+
+    const layers = [
+      { r: 2.75, h: 3.9, yo: trunkH * 0.52 },
+      { r: 2.15, h: 3.4, yo: trunkH * 0.52 + 1.95 },
+      { r: 1.42, h: 2.9, yo: trunkH * 0.52 + 3.7 }
+    ];
+
+    for (const L of layers) {
+      e.set(0, Math.random() * Math.PI * 2, 0);
+      q.setFromEuler(e);
+      v.set(x, y + L.yo, z);
+      s.set(L.r * scale, L.h * scale, L.r * scale);
+      m.compose(v, q, s);
+      leaves.setMatrixAt(leafIndex, m);
+      col.setHSL(0.29 + (Math.random() - 0.5) * 0.05, 0.42 + Math.random() * 0.2, 0.16 + Math.random() * 0.13);
+      leaves.setColorAt(leafIndex, col);
+      leafIndex++;
+    }
+  }
+
+  trunks.instanceMatrix.needsUpdate = true;
+  leaves.instanceMatrix.needsUpdate = true;
+  if (trunks.instanceColor) trunks.instanceColor.needsUpdate = true;
+  if (leaves.instanceColor) leaves.instanceColor.needsUpdate = true;
+
+  scene.add(trunks, leaves);
+}
+
+function buildScatter() {
+  const q = new THREE.Quaternion(), e = new THREE.Euler();
+  const v = new THREE.Vector3(), s = new THREE.Vector3(), m = new THREE.Matrix4();
+  const col = new THREE.Color();
+
+  /* rocks */
+  const rockCount = 90;
+  const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true });
+  const rocks = new THREE.InstancedMesh(rockGeo, rockMat, rockCount);
+  rocks.castShadow = rocks.receiveShadow = true;
+
+  for (let i = 0; i < rockCount; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * WORLD_RADIUS;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const sc = 0.5 + Math.random() * 1.5;
+
+    e.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+    q.setFromEuler(e);
+    v.set(x, terrainHeight(x, z) + sc * 0.25, z);
+    s.set(sc, sc * (0.6 + Math.random() * 0.5), sc);
+    m.compose(v, q, s);
+    rocks.setMatrixAt(i, m);
+    col.setHSL(0.09, 0.08, 0.34 + Math.random() * 0.22);
+    rocks.setColorAt(i, col);
+  }
+  rocks.instanceMatrix.needsUpdate = true;
+  if (rocks.instanceColor) rocks.instanceColor.needsUpdate = true;
+  scene.add(rocks);
+
+  /* bushes */
+  const bushCount = 220;
+  const bushGeo = new THREE.SphereGeometry(1, 8, 6);
+  const bushMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true });
+  const bushes = new THREE.InstancedMesh(bushGeo, bushMat, bushCount);
+  bushes.castShadow = bushes.receiveShadow = true;
+
+  for (let i = 0; i < bushCount; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * WORLD_RADIUS;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const sc = 0.6 + Math.random() * 1.1;
+
+    e.set(0, Math.random() * Math.PI * 2, 0);
+    q.setFromEuler(e);
+    v.set(x, terrainHeight(x, z) + sc * 0.5, z);
+    s.set(sc * 1.3, sc * 0.85, sc * 1.3);
+    m.compose(v, q, s);
+    bushes.setMatrixAt(i, m);
+    col.setHSL(0.26 + Math.random() * 0.06, 0.45, 0.18 + Math.random() * 0.12);
+    bushes.setColorAt(i, col);
+  }
+  bushes.instanceMatrix.needsUpdate = true;
+  if (bushes.instanceColor) bushes.instanceColor.needsUpdate = true;
+  scene.add(bushes);
+
+  /* grass tufts */
+  const tuftCount = 1400;
+  const tuftGeo = new THREE.ConeGeometry(0.14, 0.8, 3);
+  tuftGeo.translate(0, 0.4, 0);
+  const tuftMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true });
+  const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, tuftCount);
+  tufts.receiveShadow = true;
+
+  for (let i = 0; i < tuftCount; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * 110;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const sc = 0.6 + Math.random() * 0.9;
+
+    e.set((Math.random() - 0.5) * 0.3, Math.random() * Math.PI * 2, (Math.random() - 0.5) * 0.3);
+    q.setFromEuler(e);
+    v.set(x, terrainHeight(x, z), z);
+    s.set(sc, sc * (0.8 + Math.random() * 0.8), sc);
+    m.compose(v, q, s);
+    tufts.setMatrixAt(i, m);
+    col.setHSL(0.25 + Math.random() * 0.05, 0.5, 0.24 + Math.random() * 0.16);
+    tufts.setColorAt(i, col);
+  }
+  tufts.instanceMatrix.needsUpdate = true;
+  if (tufts.instanceColor) tufts.instanceColor.needsUpdate = true;
+  scene.add(tufts);
+}
+
+/* ---------- pollen ---------- */
+let pollenPoints = null;
+let pollenData = [];
+
+function makePollenTexture() {
+  const S = 64;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  g.addColorStop(0.0, 'rgba(255,245,210,1)');
+  g.addColorStop(0.35, 'rgba(255,225,150,0.55)');
+  g.addColorStop(1.0, 'rgba(255,200,100,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function buildPollen() {
+  const COUNT = 650;
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array(COUNT * 3);
+
+  pollenData = [];
+  for (let i = 0; i < COUNT; i++) {
+    pollenData.push({
+      a: Math.random() * Math.PI * 2,
+      r: Math.random() * 70,
+      y: Math.random() * 14,
+      sp: 0.15 + Math.random() * 0.5,
+      ph: Math.random() * 20
+    });
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    size: 0.28, map: makePollenTexture(), transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, sizeAttenuation: true, opacity: 0.85
+  });
+
+  pollenPoints = new THREE.Points(geo, mat);
+  pollenPoints.frustumCulled = false;
+  scene.add(pollenPoints);
+}
+
+function updatePollen(t) {
+  if (!pollenPoints) return;
+  const arr = pollenPoints.geometry.attributes.position.array;
+  const px = player.object.position.x;
+  const pz = player.object.position.z;
+
+  for (let i = 0; i < pollenData.length; i++) {
+    const p = pollenData[i];
+    const x = px + Math.cos(p.a) * p.r + Math.sin(t * 0.6 + p.ph) * 1.6;
+    const z = pz + Math.sin(p.a) * p.r + Math.cos(t * 0.5 + p.ph) * 1.6;
+    const y = terrainHeight(x, z) + 0.6 + p.y + Math.sin(t * 0.9 + p.ph) * 0.9;
+    arr[i * 3] = x; arr[i * 3 + 1] = y; arr[i * 3 + 2] = z;
+  }
+  pollenPoints.geometry.attributes.position.needsUpdate = true;
+}
+
+/* =============================================================
+   8. CHICKEN BUILDER
+   ============================================================= */
+function createChicken(opts = {}) {
+  const isHen = !!opts.isHen;
+  const scale = opts.scale ?? 1;
+
+  const bodyColor  = opts.bodyColor  ?? (isHen ? 0xb0793f : 0xa8321f);
+  const bellyColor = opts.bellyColor ?? (isHen ? 0xd9b183 : 0x7a2113);
+  const wingColor  = opts.wingColor  ?? bodyColor;
+  const combColor  = opts.combColor  ?? 0xd93b2b;
+  const tailColors = opts.tailColors ?? (isHen
+    ? [0x8a5c33, 0x9c6b3d, 0x6f4726]
+    : [0x123b2e, 0x1d5c45, 0x0b2a3c, 0x2b6b50, 0x081d2b]);
+
+  const root = new THREE.Group();
+  const visual = new THREE.Group();
+  visual.scale.setScalar(scale);
+  root.add(visual);
+
+  const matBody   = new THREE.MeshStandardMaterial({ color: bodyColor,  roughness: 0.78, metalness: 0.03 });
+  const matBelly  = new THREE.MeshStandardMaterial({ color: bellyColor, roughness: 0.85 });
+  const matWing   = new THREE.MeshStandardMaterial({ color: wingColor,  roughness: 0.80 });
+  const matComb   = new THREE.MeshStandardMaterial({
+    color: combColor, roughness: 0.38, emissive: new THREE.Color(combColor).multiplyScalar(0.16)
+  });
+  const matBeak   = new THREE.MeshStandardMaterial({ color: 0xf0a52a, roughness: 0.34, metalness: 0.12 });
+  const matLeg    = new THREE.MeshStandardMaterial({ color: 0xe0a53a, roughness: 0.5 });
+  const matEye    = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.1, metalness: 0.5 });
+  const matHackle = new THREE.MeshStandardMaterial({
+    color: 0xd9a02a, roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide
+  });
+
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, parent = visual) => {
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(rx, ry, rz);
+    mesh.scale.set(sx, sy, sz);
+    parent.add(mesh);
+    return mesh;
+  };
+
+  add(new THREE.SphereGeometry(0.50, 20, 14), matBody,  0, 1.02,  0.00, 0, 0, 0, 1.00, 0.92, 1.28);
+  add(new THREE.SphereGeometry(0.42, 18, 12), matBelly, 0, 0.98,  0.32, 0, 0, 0, 0.92, 0.92, 0.90);
+  add(new THREE.SphereGeometry(0.36, 16, 12), matBody,  0, 1.08, -0.48, 0, 0, 0, 0.85, 0.90, 1.00);
+
+  add(new THREE.CylinderGeometry(0.15, 0.24, 0.55, 10), matBody, 0, 1.45, 0.22, 0.45, 0, 0);
+  if (!isHen) {
+    add(new THREE.ConeGeometry(0.30, 0.58, 10, 1, true), matHackle, 0, 1.46, 0.20, 0.45, 0, 0);
+  }
+
+  const head = new THREE.Group();
+  head.position.set(0, 1.68, 0.40);
+  visual.add(head);
+
+  add(new THREE.SphereGeometry(0.24, 20, 14), matBody, 0, 0, 0, 0, 0, 0, 1, 1, 1, head);
+  add(new THREE.ConeGeometry(0.085, 0.26, 6), matBeak, 0, -0.02, 0.24, Math.PI / 2, 0, 0, 1, 1, 1, head);
+
+  const combSizes = isHen ? [0.055, 0.07, 0.05] : [0.075, 0.105, 0.095, 0.06];
+  const combZ = isHen ? [0.06, 0.14, 0.21] : [-0.10, 0.02, 0.13, 0.22];
+  for (let i = 0; i < combSizes.length; i++) {
+    const r = combSizes[i];
+    add(new THREE.SphereGeometry(r, 10, 8), matComb, 0, 0.20 + r * 0.4, combZ[i], 0, 0, 0, 1, 1.15, 1, head);
+  }
+
+  const wattleR = isHen ? 0.04 : 0.062;
+  add(new THREE.SphereGeometry(wattleR, 9, 7), matComb, 0, -0.15, 0.15, 0, 0, 0, 1, 1.5, 1, head);
+  add(new THREE.SphereGeometry(wattleR * 0.8, 9, 7), matComb, 0, -0.20, 0.11, 0, 0, 0, 1, 1.4, 1, head);
+
+  for (let i = 0; i < 2; i++) {
+    const side = i === 0 ? -1 : 1;
+    add(new THREE.SphereGeometry(0.042, 10, 8), matEye, 0.148 * side, 0.045, 0.145, 0, 0, 0, 1, 1, 1, head);
+    add(new THREE.SphereGeometry(0.014, 6, 5),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.6 }),
+        0.163 * side, 0.065, 0.168, 0, 0, 0, 1, 1, 1, head);
+  }
+
+  const wings = [];
+  for (let i = 0; i < 2; i++) {
+    const side = i === 0 ? -1 : 1;
+    const wing = new THREE.Group();
+    wing.position.set(0.42 * side, 1.16, 0.02);
+    visual.add(wing);
+
+    const w = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 10), matWing);
+    w.scale.set(0.28, 0.88, 1.05);
+    w.position.set(0.11 * side, -0.10, -0.02);
+    wing.add(w);
+
+    for (let k = 0; k < 3; k++) {
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.36, 5), matWing);
+      tip.position.set(0.12 * side, -0.22, -0.26 - k * 0.16);
+      tip.rotation.x = -1.35;
+      wing.add(tip);
+    }
+    wings.push(wing);
+  }
+
+  const tail = new THREE.Group();
+  tail.position.set(0, 1.20, -0.55);
+  visual.add(tail);
+
+  const featherCount = isHen ? 3 : 6;
+  for (let i = 0; i < featherCount; i++) {
+    const t = featherCount === 1 ? 0 : (i / (featherCount - 1)) - 0.5;
+    const mat = new THREE.MeshStandardMaterial({
+      color: tailColors[i % tailColors.length], roughness: 0.4, metalness: 0.42
+    });
+    const len = isHen ? 0.5 + Math.cos(t * Math.PI) * 0.1 : 0.95 + Math.cos(t * Math.PI) * 0.4;
+    const geo = new THREE.ConeGeometry(0.075, len, 5);
+    geo.translate(0, len / 2, 0);
+
+    const feather = new THREE.Mesh(geo, mat);
+    feather.rotation.set(isHen ? -0.95 : -1.12 - Math.abs(t) * 0.3, 0, t * 1.15);
+    tail.add(feather);
+  }
+
+  const legs = [];
+  for (let i = 0; i < 2; i++) {
+    const side = i === 0 ? -1 : 1;
+    const leg = new THREE.Group();
+    leg.position.set(0.15 * side, 0.62, 0.02);
+    visual.add(leg);
+
+    const shank = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 0.62, 6), matLeg);
+    shank.position.y = -0.31;
+    leg.add(shank);
+
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.05, 0.30), matLeg);
+    foot.position.set(0, -0.60, 0.07);
+    leg.add(foot);
+
+    const backToe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.045, 0.14), matLeg);
+    backToe.position.set(0, -0.60, -0.10);
+    leg.add(backToe);
+
+    legs.push(leg);
+  }
+
+  root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+
+  return {
+    root, visual, head, legs, wings, tail,
+    phase: Math.random() * 20, flap: 0, moveSpeed: 0,
+    state: 'idle', index: 0, wanderTimer: 0, wanderAngle: 0, moving: false, fleeTime: 0
+  };
+}
+
+function animateChicken(c, t, dt) {
+  const sp = Math.min(c.moveSpeed / 6, 1.6);
+  const phase = t * (6.5 + c.moveSpeed * 1.15) + c.phase;
+
+  c.visual.position.y = Math.abs(Math.sin(phase)) * 0.055 * sp;
+  c.visual.rotation.z = Math.sin(phase) * 0.045 * sp;
+  c.visual.rotation.x = -Math.min(c.moveSpeed / 22, 0.18);
+
+  const legSwing = Math.sin(phase) * 0.85 * sp;
+  c.legs[0].rotation.x = legSwing;
+  c.legs[1].rotation.x = -legSwing;
+
+  c.flap = Math.max(0, c.flap - dt * 1.6);
+  const flapAmt = c.flap + Math.min(c.moveSpeed / 18, 0.22);
+  const wave = Math.sin(t * 24) * c.flap;
+  const wingAngle = (0.16 + flapAmt * 0.95 + wave) * 0.75;
+  c.wings[0].rotation.z = -wingAngle;
+  c.wings[1].rotation.z =  wingAngle;
+  c.wings[0].rotation.y =  Math.sin(t * 1.7 + c.phase) * 0.05;
+  c.wings[1].rotation.y = -Math.sin(t * 1.7 + c.phase) * 0.05;
+
+  c.head.rotation.x = Math.sin(phase) * 0.10 * sp + Math.sin(t * 1.9 + c.phase) * 0.035;
+  c.head.rotation.y = Math.sin(t * 0.9 + c.phase) * 0.10 * (1 - sp * 0.5);
+
+  if (c.tail) c.tail.rotation.z = Math.sin(t * 1.6 + c.phase) * 0.07;
+}
+
+/* =============================================================
+   9. PLAYER
+   ============================================================= */
+const rooster = createChicken({ isHen: false, scale: 1.0 });
+scene.add(rooster.root);
+
+const player = {
+  object: rooster.root,
+  position: rooster.root.position,
+  velocity: new THREE.Vector3(),
+  yaw: 0, vy: 0, onGround: true, stamina: 1, moveSpeed: 0
+};
+player.position.set(0, terrainHeight(0, 0), 0);
+
+const WALK_SPEED = 8.2;
+const SPRINT_SPEED = 15.0;
+const GRAVITY = 34;
+const JUMP_VELOCITY = 9.2;
+
+/* =============================================================
+   10. HENS
+   ============================================================= */
+const hens = [];
+const following = [];
+const trail = [];
+let lastTrailPoint = new THREE.Vector3(9999, 0, 9999);
+
+const HEN_PALETTES = [
+  { bodyColor: 0xb0793f, bellyColor: 0xd9b183, wingColor: 0x9a6835, combColor: 0xd0452f },
+  { bodyColor: 0xe8e0cf, bellyColor: 0xfff8ec, wingColor: 0xd6ccb8, combColor: 0xe0523d },
+  { bodyColor: 0x7d4f2a, bellyColor: 0xa87a4c, wingColor: 0x6a4122, combColor: 0xc93f2c },
+  { bodyColor: 0xd9cbb4, bellyColor: 0xf2ead9, wingColor: 0xbfae94, combColor: 0xdb4a33 },
+  { bodyColor: 0x8f6b4a, bellyColor: 0xb8946c, wingColor: 0x7a5940, combColor: 0xd24a34 }
+];
+
+function spawnHens(count) {
+  for (let i = 0; i < count; i++) {
+    const pal = HEN_PALETTES[Math.floor(Math.random() * HEN_PALETTES.length)];
+    const hen = createChicken({
+      isHen: true,
+      scale: 0.70 + Math.random() * 0.12,
+      bodyColor: pal.bodyColor, bellyColor: pal.bellyColor,
+      wingColor: pal.wingColor, combColor: pal.combColor
+    });
+
+    let x = 0, z = 0, tries = 0;
+    do {
+      const a = Math.random() * Math.PI * 2;
+      const r = 26 + Math.random() * 62;
+      x = player.position.x + Math.cos(a) * r;
+      z = player.position.z + Math.sin(a) * r;
+      tries++;
+    } while (Math.hypot(x, z) > WORLD_RADIUS && tries < 30);
+
+    hen.root.position.set(x, terrainHeight(x, z), z);
+    hen.root.rotation.y = Math.random() * Math.PI * 2;
+    hen.state = 'wander';
+    hen.wanderTimer = Math.random() * 2;
+    hen.wanderAngle = Math.random() * Math.PI * 2;
+    hen.moving = false;
+    hen.fleeTime = 0;
+    hen.moveSpeed = 0;
+    hen.index = -1;
+
+    scene.add(hen.root);
+    hens.push(hen);
+  }
+}
+
+/* =============================================================
+   11. PARTICLE BURSTS
+   ============================================================= */
+const burstPool = [];
+function buildBurstPool() {
+  const geo = new THREE.OctahedronGeometry(0.085);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffd98a, emissive: 0xffb347, emissiveIntensity: 2.2, roughness: 0.35, metalness: 0.2
+  });
+  for (let i = 0; i < 110; i++) {
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.visible = false;
+    scene.add(mesh);
+    burstPool.push({ mesh, life: 0, maxLife: 1, vel: new THREE.Vector3() });
+  }
+}
+function emitBurst(pos, count = 12) {
+  let spawned = 0;
+  for (const p of burstPool) {
+    if (p.life > 0) continue;
+    p.life = p.maxLife = 0.75 + Math.random() * 0.45;
+    p.mesh.position.copy(pos);
+    p.mesh.visible = true;
+    p.mesh.scale.setScalar(1);
+    p.vel.set((Math.random() - 0.5) * 7, 3.5 + Math.random() * 4.5, (Math.random() - 0.5) * 7);
+    if (++spawned >= count) break;
+  }
+}
+function updateBursts(dt) {
+  for (const p of burstPool) {
+    if (p.life <= 0) continue;
+    p.life -= dt;
+    if (p.life <= 0) { p.mesh.visible = false; continue; }
+    p.vel.y -= 16 * dt;
+    p.mesh.position.addScaledVector(p.vel, dt);
+    p.mesh.rotation.x += dt * 9;
+    p.mesh.rotation.y += dt * 7;
+    const k = p.life / p.maxLife;
+    p.mesh.scale.setScalar(Math.max(0.05, k * 1.2));
+  }
+}
+
+/* =============================================================
+   12. STORY DATA
+   ============================================================= */
+const CHAPTERS = [
+  {
+    title: 'CHAPTER ONE',
+    subtitle: 'The Morning After',
+    label: 'PROLOGUE',
+    lines: [
+      'Long before the highways, before the city lights crept over the hills, there was a small farm at the edge of an old forest.',
+      'You were the smallest chick in the coop.\nThe others called you plain. They called you ordinary.',
+      'But the morning you first crowed, the whole valley turned to look.',
+      'This morning the gate was left open — and every hen wandered off into the woods.\n\nAnd you, Rooster Handsome, are no longer ordinary.'
+    ]
+  },
+  {
+    title: 'CHAPTER TWO',
+    subtitle: 'Deeper In',
+    label: 'CHAPTER TWO',
+    lines: [
+      'The coop is quiet behind you now. The forest closes over the path like a warm hand.',
+      'Somewhere ahead a hen is clucking — patient, and a little bit teasing.\n\nGo on, handsome. She is waiting.'
+    ]
+  },
+  {
+    title: 'CHAPTER THREE',
+    subtitle: 'The Golden Hour',
+    label: 'CHAPTER THREE',
+    lines: [
+      'You are deeper in than any rooster from the farm has ever been.\nThe light comes down in slow golden ribbons.',
+      'You remember this light. It is the exact color of the first evening you ever spent outside the coop.',
+      'The hens remember it too. That is why they run — they want you to see it with them.'
+    ]
+  },
+  {
+    title: 'CHAPTER FOUR',
+    subtitle: 'Under the Moon',
+    label: 'CHAPTER FOUR',
+    lines: [
+      'Afternoon leans into evening, and the trees turn the color of honey and old photographs.',
+      'Your legs are tired. Your comb is crooked.\nYou have never felt more like yourself.',
+      'Keep going. The best hens are always just past the next clearing.'
+    ]
+  },
+  {
+    title: 'CHAPTER FIVE',
+    subtitle: 'The Long Way Home',
+    label: 'CHAPTER FIVE',
+    lines: [
+      'Night falls over the forest like a soft blue blanket.',
+      'The hens are quiet now. Careful now.\n\nEven an ordinary rooster can be brave in the dark.'
+    ]
+  },
+  {
+    title: 'CHAPTER SIX',
+    subtitle: 'And On',
+    label: 'CHAPTER SIX',
+    lines: [
+      'The moon is high. The forest hums its old, slow song.',
+      'Somewhere behind you is a warm yellow window, and a coop, and a name carved into the door.',
+      'But there is always one more hen.\nAnd you are always, always handsome.'
+    ]
+  }
+];
+
+function getChapter(level) {
+  const idx = (level - 1) % CHAPTERS.length;
+  const base = CHAPTERS[idx];
+  if (level > CHAPTERS.length) {
+    return { ...base, title: `CHAPTER ${level}`, label: `CHAPTER ${level}` };
+  }
+  return base;
+}
+
+/* =============================================================
+   13. GAME STATE + UI
+   ============================================================= */
+const game = {
+  state: 'menu',
+  level: 1,
+  collected: 0,
+  needed: 3,
+  transitionTimer: 0
+};
+
+const uiLevel    = document.getElementById('uiLevel');
+const uiHens     = document.getElementById('uiHens');
+const uiBar      = document.getElementById('uiBar');
+const uiStam     = document.getElementById('uiStam');
+const uiChapter  = document.getElementById('uiChapter');
+const hud        = document.getElementById('hud');
+const overlay    = document.getElementById('overlay');
+const toastEl    = document.getElementById('toast');
+const chapterCard= document.getElementById('chapterCard');
+const ccTitle    = document.getElementById('ccTitle');
+const ccSub      = document.getElementById('ccSub');
+const storyOverlay = document.getElementById('storyOverlay');
+const storyBox     = document.getElementById('storyBox');
+const storyTextEl  = document.getElementById('storyText');
+const storyChapterEl = document.getElementById('storyChapter');
+
+function updateHUD() {
+  uiLevel.textContent = game.level;
+  uiHens.textContent = `${game.collected} / ${game.needed}`;
+  uiBar.style.width = Math.min(100, (game.collected / game.needed) * 100) + '%';
+  const ch = getChapter(game.level);
+  uiChapter.textContent = `${ch.title} · ${ch.subtitle}`;
+}
+
+function showToast(text, ms = 1500) {
+  toastEl.textContent = text;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+
+function showChapterCard(title, subtitle, ms = 3200) {
+  ccTitle.textContent = title;
+  ccSub.textContent = subtitle;
+  chapterCard.classList.add('show');
+  clearTimeout(chapterCard._t);
+  chapterCard._t = setTimeout(() => chapterCard.classList.remove('show'), ms);
+}
+
+/* =============================================================
+   14. STORY PLAYER (typewriter)
+   ============================================================= */
+let storyQueue = [];
+let storyAfter = null;
+let typing = false;
+let typeIdx = 0;
+let typeTimer = null;
+let typeFull = '';
+
+function playStory(pages, after) {
+  storyQueue = pages.slice();
+  storyAfter = after;
+  game.state = 'story';
+  hud.classList.remove('show');
+  storyOverlay.classList.add('show');
+  nextStoryPage();
+}
+
+function nextStoryPage() {
+  if (storyQueue.length === 0) {
+    storyOverlay.classList.remove('show');
+    const fn = storyAfter;
+    storyAfter = null;
+    if (fn) fn();
+    return;
+  }
+  const page = storyQueue.shift();
+  storyChapterEl.textContent = page.label || '';
+  startTyping(page.text);
+}
+
+function startTyping(text) {
+  typeFull = text;
+  typeIdx = 0;
+  storyTextEl.textContent = '';
+  storyBox.classList.remove('ready');
+  typing = true;
+  clearInterval(typeTimer);
+
+  typeTimer = setInterval(() => {
+    typeIdx++;
+    storyTextEl.textContent = typeFull.slice(0, typeIdx);
+    if (typeIdx % 5 === 0) Audio.storyTick();
+    if (typeIdx >= typeFull.length) {
+      clearInterval(typeTimer);
+      typing = false;
+      storyBox.classList.add('ready');
+    }
+  }, 22);
+}
+
+function finishTyping() {
+  clearInterval(typeTimer);
+  typeIdx = typeFull.length;
+  storyTextEl.textContent = typeFull;
+  typing = false;
+  storyBox.classList.add('ready');
+}
+
+function advanceStory() {
+  if (!storyOverlay.classList.contains('show')) return;
+  if (typing) { finishTyping(); return; }
+  nextStoryPage();
+}
+
+storyOverlay.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  advanceStory();
+});
+
+window.addEventListener('keydown', e => {
+  if (game.state === 'story' && (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter')) {
+    e.preventDefault();
+    advanceStory();
+  }
+  if (e.code === 'Enter' && game.state === 'menu') {
+    const btn = document.querySelector('#screen-menu button[data-action="story"]');
+    if (btn) btn.click();
+  }
+});
+
+/* =============================================================
+   15. LEVEL FLOW
+   ============================================================= */
+function startLevel(n) {
+  game.level = n;
+  game.collected = 0;
+  game.needed = 2 + n * 2;
+  game.state = 'playing';
+
+  for (const h of hens) scene.remove(h.root);
+  hens.length = 0;
+  following.length = 0;
+  trail.length = 0;
+  lastTrailPoint.set(9999, 0, 9999);
+
+  applyPalette(n - 1);
+  spawnHens(game.needed + 5);
+
+  updateHUD();
+  hud.classList.add('show');
+
+  const ch = getChapter(n);
+  showChapterCard(ch.title, ch.subtitle);
+  Audio.crow();
+}
+
+function levelComplete() {
+  game.state = 'transition';
+  game.transitionTimer = 2.4;
+  showToast('FLOCK COMPLETE!', 1800);
+  emitBurst(player.position.clone().setY(player.position.y + 1.2), 26);
+  Audio.fanfare();
+}
+
+function collectHen(hen) {
+  hen.state = 'follow';
+  hen.index = following.length;
+  following.push(hen);
+  hen.flap = 1;
+  game.collected++;
+
+  const p = hen.root.position.clone();
+  p.y += 0.9;
+  emitBurst(p, 12);
+  Audio.collect();
+
+  updateHUD();
+  if (game.collected >= game.needed) levelComplete();
+}
+
+/* =============================================================
+   16. INPUT
+   ============================================================= */
+const keys = Object.create(null);
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+let camYaw = 0, camPitch = 0.15, camDistance = 8.6;
+let dragging = false;
+let lastMouse = { x: 0, y: 0 };
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  dragging = true;
+  lastMouse.x = e.clientX;
+  lastMouse.y = e.clientY;
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lastMouse.x;
+  const dy = e.clientY - lastMouse.y;
+  lastMouse.x = e.clientX;
+  lastMouse.y = e.clientY;
+
+  camYaw -= dx * 0.005 * options.sensitivity;
+  const inv = options.invertY === 'on' ? -1 : 1;
+  camPitch = THREE.MathUtils.clamp(
+    camPitch + dy * 0.004 * options.sensitivity * inv, -0.35, 0.95);
+});
+const endDrag = () => { dragging = false; };
+renderer.domElement.addEventListener('pointerup', endDrag);
+renderer.domElement.addEventListener('pointercancel', endDrag);
+
+renderer.domElement.addEventListener('wheel', e => {
+  camDistance = THREE.MathUtils.clamp(
+    camDistance + e.deltaY * 0.008 * options.sensitivity, 5, 18);
+  e.preventDefault();
+}, { passive: false });
+
+/* =============================================================
+   17. MATH HELPERS
+   ============================================================= */
+function shortAngle(a, b) {
+  let d = (b - a) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2;
+  if (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+function lerpAngle(a, b, t) { return a + shortAngle(a, b) * t; }
+
+const _v1 = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
+
+/* =============================================================
+   18. UPDATE: PLAYER
+   ============================================================= */
+function updatePlayer(dt, t) {
+  const p = player.position;
+
+  let ix = 0, iz = 0;
+  if (keys['KeyW'] || keys['ArrowUp'])    iz += 1;
+  if (keys['KeyS'] || keys['ArrowDown'])  iz -= 1;
+  if (keys['KeyA'] || keys['ArrowLeft'])  ix -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) ix += 1;
+
+  const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
+  const rx =  Math.cos(camYaw), rz = -Math.sin(camYaw);
+
+  let dx = fx * iz + rx * ix;
+  let dz = fz * iz + rz * ix;
+
+  const len = Math.hypot(dx, dz);
+  const moving = len > 0.001;
+  if (moving) { dx /= len; dz /= len; }
+
+  const wantSprint = moving && (keys['ShiftLeft'] || keys['ShiftRight']) && player.stamina > 0.02;
+
+  if (wantSprint) player.stamina = Math.max(0, player.stamina - dt * 0.30);
+  else            player.stamina = Math.min(1, player.stamina + dt * 0.17);
+
+  const targetSpeed = wantSprint ? SPRINT_SPEED : WALK_SPEED;
+
+  const k = 1 - Math.exp(-dt * (moving ? 10 : 13));
+  player.velocity.x += (dx * targetSpeed - player.velocity.x) * k;
+  player.velocity.z += (dz * targetSpeed - player.velocity.z) * k;
+
+  p.x += player.velocity.x * dt;
+  p.z += player.velocity.z * dt;
+
+  if (keys['Space'] && player.onGround) {
+    player.vy = JUMP_VELOCITY;
+    player.onGround = false;
+    rooster.flap = 1;
+    Audio.flap();
+  }
+  player.vy -= GRAVITY * dt;
+  p.y += player.vy * dt;
+
+  const ground = terrainHeight(p.x, p.z);
+  if (p.y <= ground) { p.y = ground; player.vy = 0; player.onGround = true; }
+
+  const distFromCenter = Math.hypot(p.x, p.z);
+  if (distFromCenter > WORLD_RADIUS) {
+    const s = WORLD_RADIUS / distFromCenter;
+    p.x *= s; p.z *= s;
+    player.velocity.multiplyScalar(0.4);
+  }
+
+  for (const o of obstacles) {
+    const ox = p.x - o.x, oz = p.z - o.z;
+    const d2 = ox * ox + oz * oz;
+    const minD = o.r + 0.9;
+    if (d2 < minD * minD && d2 > 0.0001) {
+      const d = Math.sqrt(d2);
+      const push = (minD - d) / d;
+      p.x += ox * push;
+      p.z += oz * push;
+      player.velocity.x *= 0.5;
+      player.velocity.z *= 0.5;
+    }
+  }
+
+  if (moving) {
+    const targetYaw = Math.atan2(dx, dz);
+    player.yaw = lerpAngle(player.yaw, targetYaw, 1 - Math.exp(-dt * 13));
+  }
+  player.object.rotation.y = player.yaw;
+
+  player.moveSpeed = Math.hypot(player.velocity.x, player.velocity.z);
+  rooster.moveSpeed = player.moveSpeed;
+  rooster.flap = Math.max(rooster.flap, wantSprint ? 0.28 : 0);
+
+  if (moving && iz > 0 && !dragging) {
+    camYaw = lerpAngle(camYaw, player.yaw, 1 - Math.exp(-dt * 2.6));
+  }
+
+  if (player.position.distanceTo(lastTrailPoint) > 0.45) {
+    lastTrailPoint.copy(player.position);
+    trail.unshift(player.position.clone());
+    if (trail.length > 420) trail.pop();
+  }
+}
+
+/* =============================================================
+   19. UPDATE: HENS
+   ============================================================= */
+function updateHen(hen, dt, t) {
+  const p = hen.root.position;
+  _v1.subVectors(player.position, p);
+  _v1.y = 0;
+  const distToPlayer = _v1.length();
+
+  let dirX = 0, dirZ = 0, speed = 0;
+
+  if (hen.state === 'wander') {
+    hen.wanderTimer -= dt;
+    if (hen.wanderTimer <= 0) {
+      hen.wanderTimer = 1.6 + Math.random() * 3.2;
+      hen.wanderAngle = Math.random() * Math.PI * 2;
+      hen.moving = Math.random() < 0.62;
+    }
+    if (hen.moving) {
+      dirX = Math.cos(hen.wanderAngle);
+      dirZ = Math.sin(hen.wanderAngle);
+      speed = 1.7;
+    }
+    if (distToPlayer < 13) { hen.state = 'flee'; hen.fleeTime = 0; hen.flap = 0.9; }
+
+  } else if (hen.state === 'flee') {
+    hen.fleeTime += dt;
+    if (distToPlayer > 0.0001) { dirX = -_v1.x / distToPlayer; dirZ = -_v1.z / distToPlayer; }
+    else { dirX = Math.random() - 0.5; dirZ = Math.random() - 0.5; }
+
+    const fatigue = THREE.MathUtils.clamp(1 - hen.fleeTime * 0.22, 0.62, 1);
+    speed = 9.4 * fatigue * (0.9 + (game.level - 1) * 0.05);
+    hen.flap = 0.7;
+
+    dirX += Math.cos(t * 3 + hen.phase) * 0.25;
+    dirZ += Math.sin(t * 3 + hen.phase) * 0.25;
+
+    if (distToPlayer > 24) { hen.state = 'wander'; hen.wanderTimer = 0; }
+    if (distToPlayer < 2.05 * (hen.root.scale.x || 1)) { collectHen(hen); return; }
+
+  } else if (hen.state === 'follow') {
+    const slot = Math.min(trail.length - 1, (hen.index + 1) * 4);
+    const target = trail.length > 0 ? trail[Math.max(0, slot)] : player.position;
+    const tx = target.x - p.x, tz = target.z - p.z;
+    const d = Math.hypot(tx, tz);
+    if (d > 0.55) {
+      speed = Math.min(d * 5.5, 20);
+      dirX = tx / d; dirZ = tz / d;
+    }
+    hen.flap = Math.max(0, hen.flap - dt * 0.8);
+
+  } else {
+    hen.moveSpeed = 0;
+    animateChicken(hen, t, dt);
+    return;
+  }
+
+  const dl = Math.hypot(dirX, dirZ);
+  if (dl > 0.001) { dirX /= dl; dirZ /= dl; } else { speed = 0; }
+
+  p.x += dirX * speed * dt;
+  p.z += dirZ * speed * dt;
+  p.y = terrainHeight(p.x, p.z);
+
+  const dc = Math.hypot(p.x, p.z);
+  if (dc > WORLD_RADIUS) { const s = WORLD_RADIUS / dc; p.x *= s; p.z *= s; }
+
+  if (speed > 0.15) {
+    const yaw = Math.atan2(dirX, dirZ);
+    hen.root.rotation.y = lerpAngle(hen.root.rotation.y, yaw, 1 - Math.exp(-dt * 9));
+  }
+
+  hen.moveSpeed = speed;
+  animateChicken(hen, t, dt);
+}
+
+/* =============================================================
+   20. CAMERA + SUN
+   ============================================================= */
+function updateCamera(dt) {
+  const p = player.position;
+  const height = 3.3 + camPitch * 6.0;
+  const targetX = p.x + Math.sin(camYaw) * camDistance;
+  const targetZ = p.z + Math.cos(camYaw) * camDistance;
+  const targetY = p.y + height;
+
+  const k = 1 - Math.exp(-dt * 8.5);
+  camera.position.x += (targetX - camera.position.x) * k;
+  camera.position.y += (targetY - camera.position.y) * k;
+  camera.position.z += (targetZ - camera.position.z) * k;
+
+  const groundAtCam = terrainHeight(camera.position.x, camera.position.z) + 1.4;
+  if (camera.position.y < groundAtCam) camera.position.y = groundAtCam;
+
+  _v2.set(p.x, p.y + 1.5, p.z);
+  camera.lookAt(_v2);
+}
+
+const sunOffset = new THREE.Vector3(58, 88, 34);
+function updateSun() {
+  sun.position.copy(player.position).add(sunOffset);
+  sun.target.position.copy(player.position);
+  sun.target.updateMatrixWorld();
+  skyUniforms.sunDir.value.copy(sunOffset).normalize();
+}
+
+/* =============================================================
+   21. POST-PROCESSING
+   ============================================================= */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight), 0.62, 0.72, 0.82
+);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
+/* =============================================================
+   22. APPLY OPTIONS
+   ============================================================= */
+function refreshMaterials() {
+  scene.traverse(o => {
+    if (o.isMesh || o.isInstancedMesh) {
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const mm of mats) if (mm) mm.needsUpdate = true;
+    }
+  });
+}
+
+function applyOptions() {
+  /* bloom */
+  bloomPass.enabled = options.bloom === 'on';
+
+  /* shadows */
+  const wantShadows = options.shadows !== 'off';
+  if (renderer.shadowMap.enabled !== wantShadows) {
+    renderer.shadowMap.enabled = wantShadows;
+    refreshMaterials();
+  }
+  sun.castShadow = wantShadows;
+
+  if (wantShadows) {
+    const size = options.shadows === 'high' ? 2048 : 1024;
+    if (sun.shadow.mapSize.x !== size) {
+      sun.shadow.mapSize.set(size, size);
+      if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    }
+  }
+
+  /* audio */
+  Audio.setVolume(options.volume);
+
+  /* camera clamps (in case sensitivity changed) */
+  camDistance = THREE.MathUtils.clamp(camDistance, 5, 18);
+
+  saveOptions();
+  syncOptionsUI();
+}
+
+/* =============================================================
+   23. MENUS / UI WIRING
+   ============================================================= */
+const screens = {
+  menu:    document.getElementById('screen-menu'),
+  options: document.getElementById('screen-options'),
+  credits: document.getElementById('screen-credits')
+};
+
+function showScreen(name) {
+  for (const key in screens) {
+    screens[key].classList.toggle('active', key === name);
+  }
+  overlay.classList.add('show');
+}
+
+function syncOptionsUI() {
+  document.querySelectorAll('.seg').forEach(seg => {
+    const key = seg.dataset.opt;
+    const val = String(options[key]);
+    seg.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', b.dataset.val === val);
+    });
+  });
+  const vol = document.querySelector('input[data-opt="volume"]');
+  const sen = document.querySelector('input[data-opt="sensitivity"]');
+  if (vol) vol.value = options.volume;
+  if (sen) sen.value = options.sensitivity;
+  document.getElementById('valVolume').textContent = Math.round(options.volume * 100);
+  document.getElementById('valSens').textContent = Number(options.sensitivity).toFixed(1);
+}
+
+/* segmented controls */
+document.querySelectorAll('.seg').forEach(seg => {
+  seg.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-val]');
+    if (!btn) return;
+    Audio.init(); Audio.resume(); Audio.click();
+    options[seg.dataset.opt] = btn.dataset.val;
+    applyOptions();
+  });
+});
+
+/* sliders */
+document.querySelectorAll('input[type=range]').forEach(inp => {
+  inp.addEventListener('input', () => {
+    const key = inp.dataset.opt;
+    options[key] = parseFloat(inp.value);
+    if (key === 'volume') {
+      Audio.init(); Audio.resume();
+      document.getElementById('valVolume').textContent = Math.round(options.volume * 100);
+      Audio.setVolume(options.volume);
+    } else {
+      document.getElementById('valSens').textContent = Number(options.sensitivity).toFixed(1);
+    }
+    saveOptions();
+  });
+});
+
+/* back buttons */
+document.querySelectorAll('[data-back]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    Audio.click();
+    showScreen('menu');
+  });
+});
+
+/* main menu actions */
+document.querySelectorAll('#screen-menu button[data-action]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    Audio.init();
+    Audio.resume();
+    Audio.click();
+    const action = btn.dataset.action;
+
+    if (action === 'options') { showScreen('options'); return; }
+    if (action === 'credits') { showScreen('credits'); return; }
+
+    if (action === 'story') {
+      Audio.startAmbient();
+      Audio.scheduleChirp();
+      overlay.classList.remove('show');
+      const ch = getChapter(1);
+      playStory(
+        ch.lines.map(text => ({ label: ch.label, text })),
+        () => startLevel(1)
+      );
+    }
+  });
+});
+
+/* =============================================================
+   24. BUILD THE WORLD
+   ============================================================= */
+buildTerrain();
+buildForest();
+buildScatter();
+buildPollen();
+buildBurstPool();
+
+applyPalette(0);
+updateHUD();
+syncOptionsUI();
+applyOptions();
+
+/* =============================================================
+   25. MAIN LOOP
+   ============================================================= */
+const clock = new THREE.Clock();
+let elapsed = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+
+  if (game.state === 'playing') {
+    updatePlayer(dt, elapsed);
+    for (let i = hens.length - 1; i >= 0; i--) updateHen(hens[i], dt, elapsed);
+    animateChicken(rooster, elapsed, dt);
+
+  } else if (game.state === 'transition') {
+    rooster.moveSpeed *= 0.9;
+    animateChicken(rooster, elapsed, dt);
+    for (const hen of hens) { hen.moveSpeed *= 0.9; animateChicken(hen, elapsed, dt); }
+
+    game.transitionTimer -= dt;
+    if (game.transitionTimer <= 0) {
+      const next = game.level + 1;
+      const ch = getChapter(next);
+      playStory(
+        ch.lines.map(text => ({ label: ch.label, text })),
+        () => startLevel(next)
+      );
+    }
+
+  } else if (game.state === 'story') {
+    /* gentle idle while reading */
+    rooster.moveSpeed *= 0.92;
+    animateChicken(rooster, elapsed, dt);
+    for (const hen of hens) { hen.moveSpeed *= 0.92; animateChicken(hen, elapsed, dt); }
+    camYaw += dt * 0.05;
+    camPitch = 0.22;
+    camDistance = 10.5;
+    updateCamera(dt);
+
+  } else {
+    /* main menu — slow cinematic orbit */
+    camYaw += dt * 0.22;
+    camDistance = 9.5;
+    camPitch = 0.2;
+    animateChicken(rooster, elapsed, dt);
+    updateCamera(dt);
+  }
+
+  if (game.state === 'playing' || game.state === 'transition') updateCamera(dt);
+
+  updateSun();
+  updatePollen(elapsed);
+  updateBursts(dt);
+
+  skyDome.position.copy(camera.position);
+  uiStam.style.width = (player.stamina * 100) + '%';
+
+  composer.render();
+}
+
+/* =============================================================
+   26. RESIZE
+   ============================================================= */
+window.addEventListener('resize', () => {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+  bloomPass.setSize(w, h);
+});
+
+/* =============================================================
+   27. GO
+   ============================================================= */
+composer.render();
+animate();
+</script>
+</body>
+</html>
